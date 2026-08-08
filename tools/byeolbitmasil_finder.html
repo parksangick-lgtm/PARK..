@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>별빛마실 사연 소재 발굴기</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Pretendard", -apple-system, "Malgun Gothic", system-ui, sans-serif;
+    background: linear-gradient(160deg, #1e1b4b 0%, #312e81 55%, #4c1d95 100%);
+    min-height: 100vh;
+    padding: 28px 16px 48px;
+    color: #1e1b4b;
+  }
+  .wrap { max-width: 620px; margin: 0 auto; }
+  .brand { text-align: center; color: #fcd34d; font-size: 14px; letter-spacing: 1px; margin-bottom: 6px; }
+  h1 { text-align: center; color: #fff; font-size: 27px; margin: 0 0 4px; }
+  .sub { text-align: center; color: #c7d2fe; font-size: 14px; margin: 0 0 20px; }
+  .panel {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 18px;
+  }
+  .label { color: #c7d2fe; font-size: 12px; margin: 0 0 8px; letter-spacing: .3px; }
+  input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    border: none;
+    border-radius: 12px;
+    outline: none;
+    margin-bottom: 12px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip {
+    background: rgba(252,211,77,0.15);
+    color: #fde68a;
+    border: 1px solid rgba(252,211,77,0.4);
+    border-radius: 999px;
+    padding: 7px 13px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .chip:hover { background: rgba(252,211,77,0.28); }
+  .chip.active { background: #fcd34d; color: #1e1b4b; border-color: #fcd34d; font-weight: 700; }
+  .chip.recent { background: rgba(199,210,254,0.15); color: #e0e7ff; border-color: rgba(199,210,254,0.35); }
+  .chip.recent:hover { background: rgba(199,210,254,0.28); }
+  .row { display: flex; gap: 8px; }
+  .go {
+    flex: 1; padding: 15px; font-size: 17px; font-weight: 700;
+    color: #1e1b4b; background: #fcd34d; border: none; border-radius: 12px; cursor: pointer;
+  }
+  .again {
+    padding: 15px 18px; font-size: 16px; background: #a5b4fc; color: #1e1b4b;
+    border: none; border-radius: 12px; cursor: pointer; display: none;
+  }
+  .toolbar { display: none; gap: 8px; margin: 12px 0 18px; }
+  .toolbtn {
+    flex: 1; padding: 11px; font-size: 14px; font-weight: 600; color: #e0e7ff;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px; cursor: pointer;
+  }
+  .toolbtn:hover { background: rgba(255,255,255,0.16); }
+  .card {
+    background: #fff; border-radius: 16px; padding: 18px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25); margin-bottom: 14px;
+  }
+  .cardtop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 6px; }
+  .cardtop-left { display: flex; align-items: center; gap: 6px; }
+  .tag {
+    background: #312e81; color: #fcd34d; font-size: 12px; font-weight: 700;
+    padding: 4px 11px; border-radius: 999px;
+  }
+  .tonetag {
+    font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px;
+    background: #eef2ff; color: #4338ca;
+  }
+  .cardtop-right { display: flex; gap: 6px; }
+  .copy {
+    background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe;
+    border-radius: 8px; padding: 5px 12px; font-size: 13px; cursor: pointer;
+  }
+  .star {
+    background: #fffbeb; color: #b45309; border: 1px solid #fcd34d;
+    border-radius: 8px; padding: 5px 10px; font-size: 14px; cursor: pointer; line-height: 1;
+  }
+  .star.on { background: #fcd34d; color: #78350f; }
+  .title { margin: 2px 0; font-size: 17px; font-weight: 700; color: #1e1b4b; }
+  .syn { margin: 8px 0 12px; font-size: 15px; color: #374151; line-height: 1.65; }
+  .hook {
+    display: flex; gap: 8px; background: #fef3c7; border-radius: 10px; padding: 11px 13px;
+    font-size: 14px; color: #92400e; line-height: 1.55;
+  }
+  .favsec { margin-top: 22px; }
+  .favtoggle {
+    width: 100%; text-align: left; background: rgba(255,255,255,0.08); color: #fde68a;
+    border: 1px solid rgba(255,255,255,0.16); border-radius: 12px; padding: 12px 16px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .favlist { display: none; margin-top: 12px; }
+  .favitem {
+    background: #fff; border-radius: 12px; padding: 13px 14px; margin-bottom: 10px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  }
+  .favitem .title { font-size: 15px; }
+  .favitem .syn { font-size: 13px; margin: 6px 0 8px; }
+  .favitem .row2 { display: flex; gap: 8px; justify-content: flex-end; }
+  .empty { color: #c7d2fe; font-size: 13px; text-align: center; padding: 10px 0; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">✦ 별빛마실</div>
+    <h1>사연 소재 발굴기</h1>
+    <p class="sub">주제를 넣으면 시니어 가족 드라마 사연 소재 3개를 만들어 드려요.</p>
+
+    <div class="panel">
+      <input id="kw" type="text" placeholder="황혼이혼, 간병, 보이스피싱 피해…" />
+      <div class="chips" id="chips"></div>
+
+      <p class="label">톤 선택 (선택 안 하면 랜덤으로 섞어요)</p>
+      <div class="chips" id="tones"></div>
+
+      <div class="chips" id="recentWrap"></div>
+
+      <div class="row">
+        <button class="go" id="go">소재 3개 뽑기</button>
+        <button class="again" id="again">다시 뽑기</button>
+      </div>
+      <div class="toolbar" id="toolbar">
+        <button class="toolbtn" id="copyAll">📋 전체 복사</button>
+        <button class="toolbtn" id="share">🔗 공유하기</button>
+      </div>
+    </div>
+
+    <div id="out"></div>
+
+    <div class="favsec">
+      <button class="favtoggle" id="favToggle">⭐ 즐겨찾기 (<span id="favCount">0</span>)</button>
+      <div class="favlist" id="favList"></div>
+    </div>
+  </div>
+
+<script>
+  // ---------- 유틸: 한글 받침 판별 & 조사 자동 처리 ----------
+  function hasBatchim(word){
+    if(!word) return false;
+    var ch = word.charAt(word.length - 1);
+    var code = ch.charCodeAt(0);
+    if(code < 0xAC00 || code > 0xD7A3) return false; // 한글 음절이 아니면 받침 없는 형태 사용
+    return ((code - 0xAC00) % 28) !== 0;
+  }
+  function attach(word, withBatchim, noBatchim){
+    return word + (hasBatchim(word) ? withBatchim : noBatchim);
+  }
+
+  // ---------- 데이터 뱅크 ----------
+  var examples = ["황혼이혼","간병 갈등","유산 분쟁","재혼과 자녀","손주 양육","고독사","30년 만의 사과","숨겨진 유언장","요양원 보내기","황혼의 첫사랑","보이스피싱 피해","자식 빚 보증","재산 가로채기","출생의 비밀","배우자 치매","임종 화해","옛 연인의 편지","형제 부양 다툼","홀로된 아버지 재혼","실버타운 입주","치매 부모 부양","반려동물 상속","자녀 독립 후 빈둥지"];
+
+  var rel = ["30년 키운 아들","시집간 큰딸","막내며느리","사위","오래된 친구","연락 끊었던 둘째","30년 함께한 이웃","젊은 날의 첫사랑","돌아가신 어머니의 친구","의절했던 형제","이혼한 전 배우자","입양 보낸 딸","재혼한 새아버지","오래 모신 시어머니","군대 간 손자","해외로 떠난 자식","말년에 만난 반려인","치매 걸린 아버지","보육원 동기","30년 지기 동창"];
+
+  var place = ["요양병원 앞에서","시골 본가 마루에서","장례식장 한켠에서","명절 저녁상에서","은행 창구에서","낡은 아파트 현관에서","동네 경로당에서","병원 대기실에서","오래된 이발소에서","시장 좌판 앞에서","고향 정류장에서","오래된 사진관 앞에서","법원 앞 복도에서","요양원 면회실에서","가족 모임 자리에서","옛집 대문 앞에서","동창회 자리에서","공원 벤치에서","납골당 앞에서","고속버스터미널에서"];
+
+  var TONES = [
+    { key: "tears", label: "눈물" },
+    { key: "warm",  label: "훈훈" },
+    { key: "twist", label: "반전" },
+    { key: "anger", label: "분노" }
+  ];
+
+  var twistPool = [
+    {t:"남긴 한마디에 모두가 울었습니다", tone:"tears"},
+    {t:"30년 만에 처음으로 손을 맞잡았습니다", tone:"tears"},
+    {t:"마지막 순간에야 진심을 알게 됐습니다", tone:"tears"},
+    {t:"미뤄뒀던 사과가 뒤늦게 전해졌습니다", tone:"tears"},
+    {t:"말없이 흘린 눈물이 모든 걸 대신했습니다", tone:"tears"},
+    {t:"그리움이 결국 눈물로 터졌습니다", tone:"tears"},
+    {t:"떠난 뒤에야 진심을 깨달았습니다", tone:"tears"},
+
+    {t:"오랜 오해가 따뜻하게 풀렸습니다", tone:"warm"},
+    {t:"잊고 지낸 정이 다시 살아났습니다", tone:"warm"},
+    {t:"가족이 다시 한자리에 모였습니다", tone:"warm"},
+    {t:"작은 배려가 큰 감동으로 돌아왔습니다", tone:"warm"},
+    {t:"서로의 자리를 이해하게 됐습니다", tone:"warm"},
+    {t:"함께한 시간이 답이 되어줬습니다", tone:"warm"},
+    {t:"낯설던 사이가 가족이 되었습니다", tone:"warm"},
+
+    {t:"통장 하나가 모든 걸 뒤집었습니다", tone:"twist"},
+    {t:"아무도 몰랐던 편지가 나왔습니다", tone:"twist"},
+    {t:"숨겨둔 비밀이 예상 밖의 진실이었습니다", tone:"twist"},
+    {t:"믿었던 사람이 전혀 다른 얼굴을 보였습니다", tone:"twist"},
+    {t:"우연히 발견한 사진 한 장이 모든 걸 바꿨습니다", tone:"twist"},
+    {t:"알고 보니 처음부터 계획된 일이었습니다", tone:"twist"},
+    {t:"결정적 증거가 뒤늦게 나타났습니다", tone:"twist"},
+
+    {t:"참았던 화가 결국 터지고 말았습니다", tone:"anger"},
+    {t:"믿었던 만큼 배신감도 컸습니다", tone:"anger"},
+    {t:"숨겨온 진심이 원망으로 돌아왔습니다", tone:"anger"},
+    {t:"끝내 등을 돌리고 말았습니다", tone:"anger"},
+    {t:"말 한마디가 돌이킬 수 없는 상처가 됐습니다", tone:"anger"},
+    {t:"쌓여온 서운함이 폭발했습니다", tone:"anger"},
+    {t:"믿었던 가족에게 뒤통수를 맞았습니다", tone:"anger"}
+  ];
+
+  var emoPool = [
+    {t:"참아온 서러움이 터지는 순간", tone:"tears"},
+    {t:"혼자 견딘 세월의 무게", tone:"tears"},
+    {t:"다 늦게 전한 고마움", tone:"tears"},
+    {t:"끝내 하지 못한 마지막 인사", tone:"tears"},
+    {t:"그리움을 견뎌낸 시간", tone:"tears"},
+    {t:"이별 앞에서 드러난 진심", tone:"tears"},
+
+    {t:"가족이라는 이름의 따뜻함", tone:"warm"},
+    {t:"다시 이어진 정", tone:"warm"},
+    {t:"작지만 확실한 행복", tone:"warm"},
+    {t:"서로를 향한 뒤늦은 배려", tone:"warm"},
+    {t:"함께 있어 다행이라는 마음", tone:"warm"},
+    {t:"돌아온 자리의 소중함", tone:"warm"},
+
+    {t:"돈 앞에 드러난 진심", tone:"twist"},
+    {t:"몰랐던 진실의 무게", tone:"twist"},
+    {t:"믿음이 뒤집히는 순간", tone:"twist"},
+    {t:"숨겨졌던 이유의 정체", tone:"twist"},
+    {t:"예상을 벗어난 결말", tone:"twist"},
+    {t:"가려졌던 사실의 발견", tone:"twist"},
+
+    {t:"참는 것도 한계가 있다는 것", tone:"anger"},
+    {t:"가족이라도 용납 못 할 일", tone:"anger"},
+    {t:"믿음이 무너진 자리", tone:"anger"},
+    {t:"억눌러온 분노의 무게", tone:"anger"},
+    {t:"정의보다 먼저 온 배신감", tone:"anger"},
+    {t:"더는 참지 않기로 한 순간", tone:"anger"}
+  ];
+
+  var titleTemplates = [
+    function(r,kw,p,t){ return attach(r,"이","가")+" "+kw+" 앞에서 "+t; },
+    function(r,kw,p,t){ return kw+", "+p+" 벌어진 일"; },
+    function(r,kw,p,t){ return "60년 인생에서 처음 겪은 "+kw+", "+t; },
+    function(r,kw,p,t){ return "결국 "+kw+"로 갈라선 "+attach(r,"이","가")+", "+t; }
+  ];
+
+  var toneLabel = {}; TONES.forEach(function(tn){ toneLabel[tn.key] = tn.label; });
+
+  var current = [];
+  var selectedTone = null; // null = 랜덤(전체)
+
+  // ---------- 공통 유틸 ----------
+  function pick(a, u){ var i; do { i = Math.floor(Math.random()*a.length); } while(u.indexOf(i)>-1); u.push(i); return a[i]; }
+  function esc(s){ var d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+  function uid(){ return "f_"+Date.now()+"_"+Math.floor(Math.random()*10000); }
+
+  // ---------- localStorage ----------
+  function loadFavs(){ try { return JSON.parse(localStorage.getItem("byeolbit_favorites")||"[]"); } catch(e){ return []; } }
+  function saveFavs(list){ localStorage.setItem("byeolbit_favorites", JSON.stringify(list)); }
+  function loadRecent(){ try { return JSON.parse(localStorage.getItem("byeolbit_recent")||"[]"); } catch(e){ return []; } }
+  function saveRecent(list){ localStorage.setItem("byeolbit_recent", JSON.stringify(list)); }
+  function pushRecent(kw, tone){
+    var list = loadRecent().filter(function(x){ return !(x.kw===kw && x.tone===tone); });
+    list.unshift({kw:kw, tone:tone});
+    list = list.slice(0,6);
+    saveRecent(list);
+    renderRecent();
+  }
+
+  // ---------- 소재 생성 ----------
+  function build(kw, tone){
+    var ur=[],up=[],utIdx=[],ueIdx=[], cards=[];
+    var twistArr = tone ? twistPool.filter(function(x){ return x.tone===tone; }) : twistPool;
+    var emoArr = tone ? emoPool.filter(function(x){ return x.tone===tone; }) : emoPool;
+    for(var c=0;c<3;c++){
+      var r = pick(rel, ur);
+      var p = pick(place, up);
+      var tw = pick(twistArr, utIdx);
+      var em = pick(emoArr, ueIdx);
+      var usedT = [];
+      var i1 = pick([0,1,2,3], usedT);
+      var i2 = pick([0,1,2,3], usedT);
+      var titles = [ titleTemplates[i1](r,kw,p,tw.t), titleTemplates[i2](r,kw,p,tw.t) ];
+      cards.push({
+        id: uid(),
+        kw: kw,
+        tone: tone || tw.tone,
+        titles: titles,
+        synopsis: attach(r,"과","와")+"의 "+kw+" 이야기. "+p+" 시작된 갈등이 "+tw.t+".",
+        hook: "시청자가 자기 가족을 떠올리게 되는 지점 — "+em.t+"."
+      });
+    }
+    return cards;
+  }
+
+  function cardText(c){
+    return "[소재] "+toneLabel[c.tone]+"\n제목 후보\n- "+c.titles.join("\n- ")+"\n줄거리: "+c.synopsis+"\n포인트: "+c.hook;
+  }
+  function allCardsText(){
+    return current.map(function(c,i){ return "["+(i+1)+"번] "+cardText(c); }).join("\n\n");
+  }
+
+  function copyText(txt, btn){
+    var done=function(){ var o=btn.textContent; btn.textContent="복사됨!"; setTimeout(function(){ btn.textContent=o; },1500); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, function(){ fb(txt); done(); });
+    } else { fb(txt); done(); }
+  }
+  function fb(txt){ var ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); }
+
+  // ---------- 즐겨찾기 ----------
+  function isFav(id){ return loadFavs().some(function(f){ return f.id===id; }); }
+  function toggleFav(card, btn){
+    var favs = loadFavs();
+    var idx = favs.findIndex(function(f){ return f.id===card.id; });
+    if(idx>-1){ favs.splice(idx,1); btn.classList.remove("on"); btn.textContent="☆"; }
+    else { favs.unshift(card); btn.classList.add("on"); btn.textContent="★"; }
+    saveFavs(favs);
+    renderFavs();
+  }
+  function removeFav(id){
+    saveFavs(loadFavs().filter(function(f){ return f.id!==id; }));
+    renderFavs();
+    // 화면에 떠 있는 카드의 별 상태도 갱신
+    var btn = document.querySelector('.star[data-id="'+id+'"]');
+    if(btn){ btn.classList.remove("on"); btn.textContent="☆"; }
+  }
+  function renderFavs(){
+    var favs = loadFavs();
+    document.getElementById("favCount").textContent = favs.length;
+    var list = document.getElementById("favList");
+    if(favs.length===0){ list.innerHTML = '<p class="empty">아직 즐겨찾기한 소재가 없어요. 카드의 ☆ 버튼을 눌러보세요.</p>'; return; }
+    var h = "";
+    favs.forEach(function(f){
+      h += '<div class="favitem"><span class="tonetag">'+esc(toneLabel[f.tone]||"")+'</span>';
+      f.titles.forEach(function(tt){ h += '<p class="title">'+esc(tt)+'</p>'; });
+      h += '<p class="syn">'+esc(f.synopsis)+'</p>';
+      h += '<div class="row2"><button class="copy" data-favcopy="'+f.id+'">복사</button><button class="copy" data-favdel="'+f.id+'">삭제</button></div></div>';
+    });
+    list.innerHTML = h;
+    list.querySelectorAll("[data-favcopy]").forEach(function(b){
+      b.onclick = function(){
+        var id = this.getAttribute("data-favcopy");
+        var favObj = loadFavs().find(function(x){ return x.id===id; });
+        if(favObj) copyText(cardText(favObj), this);
+      };
+    });
+    list.querySelectorAll("[data-favdel]").forEach(function(b){
+      b.onclick = function(){ removeFav(this.getAttribute("data-favdel")); };
+    });
+  }
+
+  // ---------- 렌더링 ----------
+  function render(kw, tone){
+    current = build(kw, tone);
+    var out = document.getElementById("out"), h="";
+    for(var i=0;i<current.length;i++){
+      var c=current[i], tt="";
+      for(var j=0;j<c.titles.length;j++){ tt += '<p class="title">'+esc(c.titles[j])+'</p>'; }
+      var favOn = isFav(c.id) ? " on" : "";
+      var favIcon = isFav(c.id) ? "★" : "☆";
+      h += '<div class="card"><div class="cardtop"><div class="cardtop-left"><span class="tag">소재 '+(i+1)+'</span><span class="tonetag">'+esc(toneLabel[c.tone])+'</span></div>'
+         + '<div class="cardtop-right"><button class="star'+favOn+'" data-id="'+c.id+'">'+favIcon+'</button><button class="copy" data-i="'+i+'">복사</button></div></div>'
+         + tt
+         + '<p class="syn">'+esc(c.synopsis)+'</p>'
+         + '<div class="hook">💡 '+esc(c.hook)+'</div></div>';
+    }
+    out.innerHTML = h;
+    document.getElementById("again").style.display = "inline-block";
+    document.getElementById("toolbar").style.display = "flex";
+    var btns = out.querySelectorAll(".copy");
+    for(var k=0;k<btns.length;k++){
+      btns[k].onclick = function(){ var idx=parseInt(this.getAttribute("data-i"),10); copyText(cardText(current[idx]), this); };
+    }
+    out.querySelectorAll(".star").forEach(function(b){
+      b.onclick = function(){
+        var id = this.getAttribute("data-id");
+        var card = current.find(function(x){ return x.id===id; });
+        if(card) toggleFav(card, this);
+      };
+    });
+    pushRecent(kw, tone);
+  }
+
+  function renderRecent(){
+    var wrap = document.getElementById("recentWrap");
+    var list = loadRecent();
+    if(list.length===0){ wrap.innerHTML=""; return; }
+    var h = '<span class="label" style="width:100%;margin:0 0 4px;">최근 검색</span>';
+    list.forEach(function(item){
+      var label = item.kw + (item.tone ? " · "+toneLabel[item.tone] : "");
+      h += '<button class="chip recent" data-kw="'+esc(item.kw)+'" data-tone="'+(item.tone||"")+'">'+esc(label)+'</button>';
+    });
+    wrap.innerHTML = h;
+    wrap.querySelectorAll(".chip.recent").forEach(function(b){
+      b.onclick = function(){
+        document.getElementById("kw").value = this.getAttribute("data-kw");
+        selectedTone = this.getAttribute("data-tone") || null;
+        syncToneChips();
+        run();
+      };
+    });
+  }
+
+  function syncToneChips(){
+    document.querySelectorAll("#tones .chip").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-tone")===selectedTone);
+    });
+  }
+
+  // ---------- 초기화 ----------
+  var chips = document.getElementById("chips");
+  examples.forEach(function(ex){
+    var b = document.createElement("button");
+    b.className = "chip"; b.textContent = ex;
+    b.onclick = function(){ document.getElementById("kw").value = this.textContent; };
+    chips.appendChild(b);
+  });
+
+  var toneWrap = document.getElementById("tones");
+  TONES.forEach(function(tn){
+    var b = document.createElement("button");
+    b.className = "chip"; b.textContent = tn.label;
+    b.setAttribute("data-tone", tn.key);
+    b.onclick = function(){
+      var key = this.getAttribute("data-tone");
+      selectedTone = (selectedTone===key) ? null : key;
+      syncToneChips();
+    };
+    toneWrap.appendChild(b);
+  });
+
+  function run(){
+    var kw=(document.getElementById("kw").value||"").trim();
+    if(!kw){ document.getElementById("kw").focus(); return; }
+    render(kw, selectedTone);
+  }
+  document.getElementById("go").onclick = run;
+  document.getElementById("again").onclick = run;
+  document.getElementById("kw").addEventListener("keydown", function(e){ if(e.key==="Enter") run(); });
+
+  document.getElementById("copyAll").onclick = function(){ copyText(allCardsText(), this); };
+  document.getElementById("share").onclick = function(){
+    var text = allCardsText();
+    if(navigator.share){
+      navigator.share({ title: "별빛마실 사연 소재", text: text }).catch(function(){});
+    } else {
+      copyText(text, this);
+    }
+  };
+
+  document.getElementById("favToggle").onclick = function(){
+    var list = document.getElementById("favList");
+    var open = list.style.display === "block";
+    list.style.display = open ? "none" : "block";
+    this.textContent = "⭐ 즐겨찾기 (" + loadFavs().length + ") " + (open ? "▾" : "▴");
+  };
+
+  renderFavs();
+  renderRecent();
+</script>
+</body>
+</html>
