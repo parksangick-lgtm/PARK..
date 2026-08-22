@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>개인 지식 위키</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card-bg: #ffffff;
+    --text: #1c1e21;
+    --text-sub: #4b4f56;
+    --accent: #2f6feb;
+    --accent-soft: #eaf1ff;
+    --border: #e3e5e8;
+    --tag-bg: #eef0f3;
+    --tag-text: #3a3f47;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+                 "Noto Sans KR", "Malgun Gothic", sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  header h1 {
+    font-size: 32px;
+    margin: 0 0 6px;
+  }
+
+  header p.subtitle {
+    margin: 0 0 28px;
+    color: var(--text-sub);
+    font-size: 17px;
+  }
+
+  /* 검색창 */
+  .search-box {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: 8px 0 20px;
+    z-index: 10;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 16px 20px;
+    font-size: 19px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    outline: none;
+    background: var(--card-bg);
+    color: var(--text);
+    transition: border-color 0.15s ease;
+  }
+
+  .search-box input:focus {
+    border-color: var(--accent);
+  }
+
+  .result-count {
+    margin: 10px 2px 0;
+    font-size: 15px;
+    color: var(--text-sub);
+  }
+
+  /* 카드 목록 */
+  .card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    border-color: #d3d7dd;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .card-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+
+  .card-summary {
+    font-size: 17px;
+    color: var(--text-sub);
+    margin: 0;
+  }
+
+  .card-toggle {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    transition: transform 0.2s ease;
+  }
+
+  .card.open .card-toggle {
+    transform: rotate(45deg);
+  }
+
+  .card-detail {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, margin-top 0.25s ease;
+  }
+
+  .card.open .card-detail {
+    max-height: 600px;
+    margin-top: 16px;
+  }
+
+  .card-detail-inner {
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 17px;
+    color: var(--text);
+  }
+
+  .card-tags {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag {
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    font-size: 14px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-sub);
+    padding: 60px 0;
+    font-size: 18px;
+  }
+
+  @media (max-width: 480px) {
+    body { font-size: 17px; }
+    .card { padding: 18px; }
+    .card-title { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📚 개인 지식 위키</h1>
+    <p class="subtitle">제목이나 태그로 검색해보세요. 카드를 클릭하면 자세한 설명이 펼쳐집니다.</p>
+  </header>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="검색어를 입력하세요 (예: 서버, 웹, LLM ...)" autocomplete="off">
+    <div class="result-count" id="resultCount"></div>
+  </div>
+
+  <div class="card-list" id="cardList"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">검색 결과가 없습니다.</div>
+</div>
+
+<script>
+  // ------------------------------------------------------------
+  // 카드 데이터 (여기에 항목을 추가하면 자동으로 목록에 반영됩니다)
+  // 구조: { title: 제목, summary: 한 줄 요약, detail: 자세한 설명, tags: [태그, ...] }
+  // ------------------------------------------------------------
+  const CARDS = [
+    {
+      title: "하이퍼텍스트 (Hypertext)",
+      summary: "다른 문서나 자료로 즉시 이동할 수 있는 링크를 포함한 텍스트.",
+      detail: "하이퍼텍스트는 일반 텍스트와 달리 하이퍼링크(hyperlink)를 통해 다른 문서, 이미지, 페이지 등으로 비순차적으로 이동할 수 있는 텍스트를 말합니다. 1960년대 테드 넬슨(Ted Nelson)이 처음 개념을 제시했으며, 오늘날 월드와이드웹(WWW)의 HTML 문서가 대표적인 하이퍼텍스트 구현체입니다. 사용자는 링크를 클릭해 문서 사이를 자유롭게 이동하며 정보를 탐색할 수 있습니다.",
+      tags: ["웹", "HTML", "링크", "기초개념"]
+    },
+    {
+      title: "서버 (Server)",
+      summary: "다른 컴퓨터(클라이언트)에게 데이터나 서비스를 제공하는 컴퓨터 또는 프로그램.",
+      detail: "서버는 네트워크를 통해 클라이언트의 요청을 받아 처리하고 응답을 돌려주는 컴퓨터나 소프트웨어를 의미합니다. 예를 들어 파일 서버, 메일 서버, 데이터베이스 서버, 웹 서버 등 목적에 따라 다양한 종류가 있습니다. 클라이언트-서버(Client-Server) 구조에서 서버는 자원과 서비스를 제공하는 역할을, 클라이언트는 이를 요청하고 사용하는 역할을 합니다.",
+      tags: ["인프라", "네트워크", "기초개념"]
+    },
+    {
+      title: "웹 (Web / World Wide Web)",
+      summary: "인터넷 위에서 하이퍼텍스트로 연결된 문서와 자원들의 시스템.",
+      detail: "월드와이드웹(WWW)은 팀 버너스리(Tim Berners-Lee)가 1989년에 고안한 시스템으로, HTTP 프로토콜을 통해 하이퍼텍스트로 연결된 문서(웹페이지)들을 인터넷상에서 열람할 수 있게 합니다. 웹은 인터넷이라는 물리적 네트워크 위에서 동작하는 하나의 응용 서비스이며, 브라우저를 통해 URL로 접근합니다. HTML, CSS, JavaScript는 웹페이지를 구성하는 핵심 기술입니다.",
+      tags: ["웹", "인터넷", "HTTP", "기초개념"]
+    },
+    {
+      title: "LLM (Large Language Model, 거대 언어 모델)",
+      summary: "방대한 텍스트 데이터를 학습해 자연어를 이해하고 생성하는 인공지능 모델.",
+      detail: "LLM은 대규모 텍스트 데이터를 기반으로 다음에 올 단어(토큰)를 예측하도록 학습된 딥러닝 모델로, 주로 트랜스포머(Transformer) 구조를 사용합니다. 질문 답변, 번역, 요약, 코드 생성 등 다양한 자연어 처리 작업을 수행할 수 있으며, GPT, Claude, Gemini 등이 대표적인 예입니다. 파라미터 수가 클수록 일반적으로 더 복잡한 패턴을 학습할 수 있어 '거대(Large)'라는 이름이 붙었습니다.",
+      tags: ["AI", "인공지능", "머신러닝", "자연어처리"]
+    },
+    {
+      title: "웹서버 (Web Server)",
+      summary: "HTTP 요청을 받아 정적인 웹 콘텐츠(HTML, 이미지 등)를 응답하는 서버 소프트웨어.",
+      detail: "웹서버는 클라이언트(브라우저)로부터 HTTP/HTTPS 요청을 받아 HTML, CSS, 이미지, 파일 등 정적 콘텐츠를 전달하는 소프트웨어입니다. 대표적으로 Apache HTTP Server, Nginx, Microsoft IIS 등이 있습니다. 동적인 처리가 필요한 요청(로그인, 데이터베이스 조회 등)은 보통 웹서버 뒤에 있는 WAS(Web Application Server)로 전달되어 처리됩니다.",
+      tags: ["웹", "서버", "인프라", "HTTP"]
+    },
+    {
+      title: "WAS (Web Application Server)",
+      summary: "동적인 콘텐츠 생성과 비즈니스 로직 처리를 담당하는 서버.",
+      detail: "WAS는 데이터베이스 조회, 로그인 인증, 비즈니스 로직 처리 등 동적인 작업을 수행하고 그 결과를 웹서버를 통해 클라이언트에 전달하는 서버입니다. 웹서버가 정적 콘텐츠 제공에 특화되어 있다면, WAS는 애플리케이션 실행 환경(런타임)을 제공해 프로그램 코드를 실행합니다. 대표적으로 Tomcat, JBoss, WebLogic, Node.js 기반 서버 등이 있으며, 실무에서는 흔히 '웹서버 + WAS' 조합으로 시스템을 구성합니다.",
+      tags: ["웹", "서버", "인프라", "백엔드"]
+    }
+  ];
+
+  // ------------------------------------------------------------
+  // 렌더링 & 검색 로직
+  // ------------------------------------------------------------
+  const cardListEl = document.getElementById("cardList");
+  const searchInput = document.getElementById("searchInput");
+  const resultCountEl = document.getElementById("resultCount");
+  const emptyStateEl = document.getElementById("emptyState");
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function renderCards(cards) {
+    cardListEl.innerHTML = "";
+
+    if (cards.length === 0) {
+      emptyStateEl.style.display = "block";
+      resultCountEl.textContent = "검색 결과: 0개";
+      return;
+    }
+    emptyStateEl.style.display = "none";
+    resultCountEl.textContent = "총 " + cards.length + "개 항목";
+
+    cards.forEach((card) => {
+      const cardEl = document.createElement("div");
+      cardEl.className = "card";
+
+      const tagsHtml = card.tags
+        .map((tag) => `<span class="tag">#${escapeHtml(tag)}</span>`)
+        .join("");
+
+      cardEl.innerHTML = `
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">${escapeHtml(card.title)}</h2>
+            <p class="card-summary">${escapeHtml(card.summary)}</p>
+          </div>
+          <div class="card-toggle">+</div>
+        </div>
+        <div class="card-detail">
+          <div class="card-detail-inner">
+            <p>${escapeHtml(card.detail)}</p>
+            <div class="card-tags">${tagsHtml}</div>
+          </div>
+        </div>
+      `;
+
+      cardEl.addEventListener("click", () => {
+        cardEl.classList.toggle("open");
+      });
+
+      cardListEl.appendChild(cardEl);
+    });
+  }
+
+  function filterCards(query) {
+    const q = query.trim().toLowerCase();
+    if (q === "") return CARDS;
+
+    return CARDS.filter((card) => {
+      const titleMatch = card.title.toLowerCase().includes(q);
+      const tagMatch = card.tags.some((tag) => tag.toLowerCase().includes(q));
+      return titleMatch || tagMatch;
+    });
+  }
+
+  searchInput.addEventListener("input", (e) => {
+    const filtered = filterCards(e.target.value);
+    renderCards(filtered);
+  });
+
+  // 초기 렌더링
+  renderCards(CARDS);
+</script>
+</body>
+</html>
