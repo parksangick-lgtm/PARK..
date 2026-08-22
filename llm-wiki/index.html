@@ -15,6 +15,35 @@
     --border: #e3e5e8;
     --tag-bg: #eef0f3;
     --tag-text: #3a3f47;
+    --shadow: rgba(0, 0, 0, 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16181c;
+      --card-bg: #1f2227;
+      --text: #edeef0;
+      --text-sub: #a8adb5;
+      --accent: #6ea1ff;
+      --accent-soft: #223353;
+      --border: #2d3138;
+      --tag-bg: #2a2e35;
+      --tag-text: #c4c8cf;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #16181c;
+    --card-bg: #1f2227;
+    --text: #edeef0;
+    --text-sub: #a8adb5;
+    --accent: #6ea1ff;
+    --accent-soft: #223353;
+    --border: #2d3138;
+    --tag-bg: #2a2e35;
+    --tag-text: #c4c8cf;
+    --shadow: rgba(0, 0, 0, 0.35);
   }
 
   * { box-sizing: border-box; }
@@ -96,8 +125,8 @@
   }
 
   .card:hover {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-    border-color: #d3d7dd;
+    box-shadow: 0 4px 14px var(--shadow);
+    border-color: var(--accent);
   }
 
   .card-header {
