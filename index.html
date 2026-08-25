@@ -60,14 +60,21 @@
   <section id="gallery">
     <h2>상차림</h2>
     <div class="gallery">
-      <div class="ph">사진 1</div><div class="ph">사진 2</div>
-      <div class="ph">사진 3</div><div class="ph">사진 4</div>
+      <figure><img src="assets/img/gallery-1.jpg" alt="돌잔치 상차림" loading="lazy" /><figcaption>돌잔치 상차림</figcaption></figure>
+      <figure><img src="assets/img/gallery-2.jpg" alt="기업 행사 케이터링" loading="lazy" /><figcaption>기업 행사 케이터링</figcaption></figure>
+      <figure><img src="assets/img/gallery-3.jpg" alt="소규모 모임 상차림" loading="lazy" /><figcaption>소규모 모임 상차림</figcaption></figure>
+      <figure><img src="assets/img/gallery-4.jpg" alt="한상차림 전체" loading="lazy" /><figcaption>한상차림 전체</figcaption></figure>
     </div>
-    <p class="note">※ assets/ 폴더에 실제 사진을 넣고 이 자리를 &lt;img&gt;로 교체하세요.</p>
+    <p class="note">사진 파일을 <code>assets/img/</code>에 <code>gallery-1.jpg</code> … <code>gallery-4.jpg</code> 이름으로 넣으면 자동으로 표시됩니다.</p>
   </section>
 
   <section id="contact">
     <h2>문의하기</h2>
+    <div class="contact-direct">
+      <a class="btn" id="phone-link" href="#">전화로 문의</a>
+      <a class="btn ghost" id="kakao-link" href="#" hidden>카카오톡 문의</a>
+      <p class="hours" id="hours"></p>
+    </div>
     <form id="inquiry">
       <label>성함 <input name="name" required /></label>
       <label>연락처 <input name="phone" required /></label>
@@ -81,9 +88,10 @@
 </main>
 
 <footer>
-  <p>박상익출장음식 · 문의 전화 000-0000-0000</p>
+  <p id="footer-info"></p>
 </footer>
 
+<script src="site.config.js"></script>
 <script src="assets/script.js"></script>
 </body>
 </html>
