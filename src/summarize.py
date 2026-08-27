@@ -10,9 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import anthropic
+import requests
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import (
     NoTranscriptFound,
+    RequestBlocked,
     TranscriptsDisabled,
     VideoUnavailable,
 )
@@ -46,6 +48,18 @@ PROMPT = """다음은 유튜브 영상 「{title}」의 자막 전문입니다.
 자막에 없는 내용은 지어내지 마세요."""
 
 
+def load_env_file(path: Path = Path(".env")) -> None:
+    """.env 파일이 있으면 KEY=VALUE 를 환경변수로 읽어들인다."""
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip().strip("'\""))
+
+
 def extract_video_id(url_or_id: str) -> str:
     """URL 또는 ID 문자열에서 11자리 영상 ID를 뽑는다."""
     if re.fullmatch(r"[\w-]{11}", url_or_id):
@@ -69,8 +83,17 @@ def fetch_transcript(video_id: str, languages: list[str]) -> str:
     api = YouTubeTranscriptApi()
     try:
         transcript_list = api.list(video_id)
+    except RequestBlocked as exc:
+        raise RuntimeError(
+            "유튜브가 현재 IP를 차단했습니다. 클라우드 서버가 아닌 개인 PC에서 실행하거나, "
+            "잠시 후 다시 시도해 주세요."
+        ) from exc
     except (TranscriptsDisabled, VideoUnavailable) as exc:
         raise RuntimeError(f"자막을 가져올 수 없습니다 ({video_id}): {exc}") from exc
+    except requests.RequestException as exc:
+        raise RuntimeError(
+            f"유튜브에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요.\n({exc.__class__.__name__})"
+        ) from exc
 
     try:
         transcript = transcript_list.find_manually_created_transcript(languages)
@@ -131,8 +154,13 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    load_env_file()
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY 가 설정되어 있지 않습니다.", file=sys.stderr)
+        print(
+            "ANTHROPIC_API_KEY 가 없습니다.\n"
+            ".env.example 을 복사해 .env 파일을 만들고 API 키를 넣어주세요.",
+            file=sys.stderr,
+        )
         return 2
 
     try:
