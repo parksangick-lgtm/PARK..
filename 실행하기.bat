@@ -8,9 +8,14 @@ echo  유튜브 자동 요약
 echo ================================
 echo.
 
-where python >nul 2>&1
-if errorlevel 1 (
-  echo [오류] 파이썬이 설치되어 있지 않습니다.
+rem 파이썬 실행 명령 찾기: py -3 -> py -> python 순서
+set "PY="
+py -3 --version >nul 2>&1 && set "PY=py -3"
+if not defined PY (py --version >nul 2>&1 && set "PY=py")
+if not defined PY (python --version 2>nul | findstr /r "[0-9]" >nul && set "PY=python")
+
+if not defined PY (
+  echo [오류] 파이썬을 찾을 수 없습니다.
   echo https://www.python.org/downloads/ 에서 설치한 뒤 다시 실행하세요.
   echo 설치할 때 "Add python.exe to PATH" 를 반드시 체크하세요.
   pause
@@ -19,7 +24,7 @@ if errorlevel 1 (
 
 if not exist .venv (
   echo 최초 실행입니다. 준비 중이니 잠시만 기다려 주세요...
-  python -m venv .venv || (echo [오류] 준비 실패 & pause & exit /b 1)
+  %PY% -m venv .venv || (echo [오류] 준비 실패 & pause & exit /b 1)
   call .venv\Scripts\activate.bat
   python -m pip install --quiet --upgrade pip
   pip install --quiet -r requirements.txt || (echo [오류] 설치 실패 & pause & exit /b 1)
