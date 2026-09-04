@@ -1,3 +1,7 @@
 .env
 .venv/
 __pycache__/
+
+# 옵시디언 설정 폴더 (노트가 아니라 프로그램 설정이라 올리지 않음)
+.obsidian/
+.trash/
