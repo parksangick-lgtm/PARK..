@@ -61,4 +61,19 @@ targets | xargs grep -h '^title:' 2>/dev/null | sort | uniq -d | while read -r t
   note "제목 중복 → $t"
 done; echo "  (검출 없으면 통과)"
 
+echo; echo "[8] 모순 (미판정 상태로 남은 것)"
+grep -rn '미판정' wiki/ 2>/dev/null | while IFS= read -r h; do note "$h"; done
+echo "  (검출 없으면 통과)"
+
+echo; echo "[9] 상호참조 누락 (위키링크가 하나도 없는 노트 = 고립된 지식)"
+find wiki -name "*.md" ! -name "README.md" | while read -r f; do
+  grep -q '\[\[' "$f" || note "$f : 다른 노트와 연결 없음"
+done; echo "  (검출 없으면 통과)"
+
+echo; echo "[10] 조사 공백 (아직 못 채운 항목)"
+find wiki -name "*.md" ! -name "README.md" | while read -r f; do
+  n=$(grep -c '^\s*- \[ \]' "$f")
+  [ "$n" -gt 0 ] && echo "  📋 $f : 미확인 $n 건"
+done; echo "  (조사가 필요한 항목입니다 — 경고 아님)"
+
 echo; echo "=== 끝. 수정은 사람이 승인한 뒤에만 진행합니다. ==="
