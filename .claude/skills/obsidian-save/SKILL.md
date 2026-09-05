@@ -26,12 +26,17 @@ description: 만들어 낸 결과물(유튜브 요약, 쇼츠 대본, 사연 패
 
 1. 사용자가 방금 말한 경로
 2. 프로젝트 `.env` 파일의 `OBSIDIAN_VAULT`
-3. 둘 다 없으면 → 사용자에게 한 번 물어본다:
+3. `~/.claude/obsidian_vault.txt` (한 번 등록해 두면 어느 폴더에서든 쓰인다)
+4. 다 없으면 → 사용자에게 한 번 물어본다:
    "옵시디언 볼트 폴더 경로를 알려주세요. (옵시디언 → 설정 → 정보 → 볼트 경로에서
    확인할 수 있고, 그 폴더 안에 `.obsidian` 폴더가 있습니다)"
 
-경로를 받으면 `.env` 에 `OBSIDIAN_VAULT=경로` 로 적어 둘지 물어본다. 그래야 다음부터
-안 물어본다. (`.env` 는 `.gitignore` 에 있어서 GitHub에 올라가지 않는다.)
+경로를 받으면 아래로 등록해 둘지 물어본다. 그래야 다음부터 안 물어보고, 다른 작업
+폴더에서도 그대로 쓸 수 있다.
+
+```bash
+python obsidian_save.py --set-vault "볼트폴더경로"
+```
 
 ### 2. 본문 준비
 
@@ -41,8 +46,11 @@ description: 만들어 낸 결과물(유튜브 요약, 쇼츠 대본, 사연 패
 
 ### 3. 저장 실행
 
+스크립트는 `~/.claude/skills/obsidian-save/obsidian_save.py`(설치된 경우) 또는
+`src/obsidian_save.py`(이 저장소 안) 에 있다. 있는 쪽을 쓴다.
+
 ```bash
-python src/obsidian_save.py \
+python ~/.claude/skills/obsidian-save/obsidian_save.py \
   --title "노트 제목" \
   --folder "유튜브 요약" \
   --tags "유튜브,요약,별빛마실" \

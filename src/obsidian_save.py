@@ -28,6 +28,10 @@ FORBIDDEN_FILENAME_CHARS = r'[\\/:*?"<>|#^\[\]]'
 # 날짜 접두사와 ".md" 를 붙일 여유를 두고 잡았다.
 MAX_FILENAME_BYTES = 150
 
+# 볼트 경로를 기억해 두는 파일. 이게 있으면 어느 폴더에서 실행하든 볼트를 찾는다.
+# (.env 는 프로젝트마다 따로 있어서, 홈페이지 작업 폴더 같은 다른 곳에서는 못 읽는다.)
+VAULT_CONFIG = Path.home() / ".claude" / "obsidian_vault.txt"
+
 
 def load_env_file(path: Path = Path(".env")) -> None:
     """.env 파일이 있으면 KEY=VALUE 를 환경변수로 읽어들인다."""
@@ -41,15 +45,29 @@ def load_env_file(path: Path = Path(".env")) -> None:
         os.environ.setdefault(key.strip(), value.strip().strip("'\""))
 
 
+def save_vault_config(path: str) -> Path:
+    """볼트 경로를 홈 폴더에 기억해 둔다(어느 폴더에서 실행해도 찾을 수 있게)."""
+    # 윈도우에서 "경로 복사"로 붙여넣으면 따옴표가 같이 들어온다.
+    vault = Path(path.strip().strip("'\"")).expanduser()
+    if not vault.is_dir():
+        raise RuntimeError(f"볼트 폴더가 없습니다: {vault}")
+    VAULT_CONFIG.parent.mkdir(parents=True, exist_ok=True)
+    VAULT_CONFIG.write_text(str(vault.resolve()), encoding="utf-8")
+    return VAULT_CONFIG
+
+
 def resolve_vault(explicit: str | None = None) -> Path:
-    """볼트 폴더를 찾는다. --vault 인자 > OBSIDIAN_VAULT 환경변수 순서."""
-    raw = explicit or os.environ.get("OBSIDIAN_VAULT", "")
-    raw = raw.strip().strip("'\"")
+    """볼트 폴더를 찾는다. --vault > OBSIDIAN_VAULT > 홈 폴더 설정 파일 순서."""
+    raw = (explicit or os.environ.get("OBSIDIAN_VAULT", "")).strip().strip("'\"")
+    if not raw and VAULT_CONFIG.is_file():
+        raw = VAULT_CONFIG.read_text(encoding="utf-8").strip().strip("'\"")
     if not raw:
         raise RuntimeError(
-            "옵시디언 볼트 경로를 모르겠습니다.\n"
-            "  .env 파일에 OBSIDIAN_VAULT=볼트폴더경로 를 넣거나\n"
-            "  --vault \"볼트폴더경로\" 로 직접 알려주세요.\n"
+            "옵시디언 볼트 경로를 모르겠습니다. 아래 중 하나를 해주세요.\n"
+            "  1) 한 번만 등록해 두기 (어느 폴더에서든 쓸 수 있음):\n"
+            "     python obsidian_save.py --set-vault \"볼트폴더경로\"\n"
+            "  2) 이번만 직접 알려주기: --vault \"볼트폴더경로\"\n"
+            "  3) 이 프로젝트의 .env 에 OBSIDIAN_VAULT=볼트폴더경로 넣기\n"
             "  (볼트 폴더 = 옵시디언에서 열어 둔 그 폴더. 안에 .obsidian 폴더가 있습니다.)"
         )
 
@@ -211,7 +229,12 @@ def save_note(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="옵시디언 볼트에 마크다운 노트 저장")
-    parser.add_argument("--title", required=True, help="노트 제목(파일 이름이 된다)")
+    parser.add_argument("--title", help="노트 제목(파일 이름이 된다)")
+    parser.add_argument(
+        "--set-vault",
+        metavar="경로",
+        help="볼트 경로를 기억해 두고 끝낸다(한 번만 하면 어느 폴더에서든 저장 가능)",
+    )
     parser.add_argument("--folder", default="", help="볼트 안의 하위 폴더 (예: '유튜브 요약')")
     parser.add_argument("--tags", default="", help="태그 (쉼표 구분, 예: 유튜브,요약)")
     parser.add_argument("--source", default="", help="출처 링크")
@@ -230,6 +253,20 @@ def main() -> int:
     args = parser.parse_args()
 
     load_env_file()
+
+    if args.set_vault:
+        try:
+            config = save_vault_config(args.set_vault)
+        except RuntimeError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(f"볼트 경로를 기억했습니다: {config.read_text(encoding='utf-8')}")
+        print(f"(설정 파일: {config})")
+        return 0
+
+    if not args.title:
+        print("--title 이 필요합니다. (예: --title \"노트 제목\")", file=sys.stderr)
+        return 1
 
     body = args.file.read_text(encoding="utf-8") if args.file else sys.stdin.read()
 
