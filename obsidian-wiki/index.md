@@ -8,6 +8,7 @@ source: obsidian-wiki/CLAUDE.md
 created: 2026-09-05
 updated: 2026-09-05
 filters: [2]
+filter_reason: 모든 세션이 여기서 시작하므로 인수인계 필수(2)
 tags: [index, 진입점]
 ---
 
@@ -35,7 +36,8 @@ tags: [index, 진입점]
 - **`conversations/`** — 대화 로그
 - **`wiki/`** — 검증된 지식 ↓
 - **`templates/`** — 노트 템플릿 (`출장음식-행사기록.md` 포함)
-- **`tools/lint.sh`** — 위키 건강검진 스크립트
+- **`tools/lint.sh`** — 위키 건강검진 (12개 검사)
+- **`tools/raw-guard.sh`** — Raw 불변성 지문 대조
 
 ## 📚 지식 영역
 

@@ -8,6 +8,7 @@ source:          # ⚠️ 필수. raw/ 경로 또는 외부 URL. 비어 있으�
 created: 
 updated: 
 filters: []      # ⚠️ 필수. 통과한 5-필터 번호 (예: [1, 5])
+filter_reason:   # ⚠️ 필수. 왜 그 필터를 통과했는지 한 줄
 tags: []
 ---
 

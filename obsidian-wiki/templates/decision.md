@@ -8,6 +8,7 @@ source:
 created: 
 updated: 
 filters: [3]
+filter_reason:   # ⚠️ 필수. 왜 그 필터를 통과했는지 한 줄
 tags: [의사결정]
 ---
 

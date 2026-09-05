@@ -8,6 +8,7 @@ source: obsidian-wiki/CLAUDE.md
 created: 2026-09-05
 updated: 2026-09-05
 filters: [2, 3]
+filter_reason: 무엇을 언제 했는지 이어받기 위해 필수(2)이며 결정 시점 추적 근거(3)
 tags: [log]
 ---
 
@@ -18,6 +19,7 @@ tags: [log]
 
 | 날짜 | 명령 | 내용 | 승격 | 관련 파일 |
 |---|---|---|---|---|
+| 2026-09-05 | save | 안전장치 4종 실효화 (raw 지문·필터근거·복붙탐지) | 2건 | [[CLAUDE]] |
 | 2026-09-05 | save | 한글·영문 분담 명문화, 명령어 입출력 정본 표 신설 | 1건 | [[wiki/90-공통규칙/언어-규칙]] |
 | 2026-09-05 | lint | Karpathy 원칙 반영 후 재검사 | - | tools/lint.sh |
 | 2026-09-05 | save | Karpathy 기스트 대조 → ingest/query/lint/log 보강 | 1건 | [[wiki/90-공통규칙/위키-설계-원칙]] |

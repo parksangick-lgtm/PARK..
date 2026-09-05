@@ -28,10 +28,18 @@ targets | while read -r f; do
   elif [ ! -e "$src" ] && [ ! -e "../$src" ]; then note "$f : source 경로 없음 → $src"; fi
 done; echo "  (검출 없으면 통과)"
 
-echo; echo "[3] 5-필터 미기재"
+echo; echo "[3] 5-필터 기재 및 값 유효성"
 targets | while read -r f; do
   fl=$(grep -m1 '^filters:' "$f" | sed 's/^filters:[[:space:]]*//')
-  { [ -z "$fl" ] || [ "$fl" = "[]" ]; } && note "$f : filters 비어있음 → 5-필터 재적용 필요"
+  if [ -z "$fl" ] || [ "$fl" = "[]" ]; then
+    note "$f : filters 비어있음 → wiki 승격 자격 없음"
+  else
+    # 1~5 이외의 숫자가 있으면 잘못된 필터 번호
+    bad=$(echo "$fl" | tr -cd '0-9' | fold -w1 | grep -vE '^[1-5]$' | head -1)
+    [ -n "$bad" ] && note "$f : 잘못된 필터 번호 '$bad' (1~5만 허용)"
+  fi
+  # 판정 근거가 적혀 있는지
+  grep -q '^filter_reason:' "$f" || note "$f : filter_reason 없음 → 왜 통과했는지 한 줄 필요"
 done; echo "  (검출 없으면 통과)"
 
 echo; echo "[4] 오래된 규칙 (updated 기준 180일 초과)"
@@ -75,5 +83,16 @@ find wiki -name "*.md" ! -name "README.md" | while read -r f; do
   n=$(grep -c '^\s*- \[ \]' "$f")
   [ "$n" -gt 0 ] && echo "  📋 $f : 미확인 $n 건"
 done; echo "  (조사가 필요한 항목입니다 — 경고 아님)"
+
+echo; echo "[11] Raw 불변성 (원본이 변경·삭제되지 않았는가)"
+bash tools/raw-guard.sh verify | sed 's/^/  /'
+
+echo; echo "[12] conversations → wiki 원문 복사 (재작성 없이 복붙했는가)"
+for w in $(find wiki -name "*.md" ! -name "README.md"); do
+  for c in $(find conversations -name "*.md" ! -name "README.md"); do
+    dup=$(grep -Fxf "$c" "$w" 2>/dev/null | grep -vE '^\s*$|^\||^#|^-{3}|^>' | awk 'length($0)>30' | wc -l)
+    [ "$dup" -ge 3 ] && note "$w ← $c : 동일 문장 ${dup}줄 (재작성 필요)"
+  done
+done; echo "  (검출 없으면 통과)"
 
 echo; echo "=== 끝. 수정은 사람이 승인한 뒤에만 진행합니다. ==="
