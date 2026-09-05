@@ -45,6 +45,46 @@ python src/summarize.py "https://youtu.be/VIDEO_ID" --stdout  # 화면에만 출
 python src/summarize.py VIDEO_ID --lang ja,en
 ```
 
+## 옵시디언(Obsidian) 저장
+
+요약이나 대본을 옵시디언 볼트에 마크다운 노트로 바로 저장할 수 있습니다.
+옵시디언 볼트는 `.md` 파일이 들어 있는 그냥 폴더라서, 파일만 써 넣으면 앱에 바로 나타납니다.
+
+먼저 `.env` 에 볼트 폴더 경로를 넣습니다.
+
+```
+OBSIDIAN_VAULT=C:\Users\내이름\Documents\내볼트
+```
+
+**유튜브 요약을 저장할 때** — `--obsidian` 을 붙입니다.
+
+```bash
+python src/summarize.py "https://youtu.be/VIDEO_ID" --obsidian
+python src/summarize.py "https://youtu.be/VIDEO_ID" --obsidian --obsidian-folder "쇼츠 소재"
+```
+
+**아무 내용이나 저장할 때** — `src/obsidian_save.py` 를 씁니다. (파이썬 표준 기능만 쓰므로
+`pip install` 없이도 동작합니다.)
+
+```bash
+python src/obsidian_save.py --title "노트 제목" --folder "쇼츠 대본" \
+  --tags "쇼츠,대본" --file 내용.md
+```
+
+| 옵션 | 설명 |
+| --- | --- |
+| `--title` | 노트 제목 (파일 이름이 됩니다) |
+| `--folder` | 볼트 안 하위 폴더. 없으면 자동 생성 |
+| `--tags` | 태그, 쉼표 구분 |
+| `--source` | 출처 링크 |
+| `--date-prefix` | 파일 이름 앞에 날짜 붙이기 |
+| `--mode` | 이름이 겹칠 때 `new`(기본) / `overwrite` / `append` |
+| `--dry-run` | 저장하지 않고 결과만 확인 |
+
+Claude Code 에서는 `.claude/skills/obsidian-save` 스킬이 이 과정을 대신 해 줍니다.
+"옵시디언에 저장해줘" 라고 말하면 폴더와 태그까지 알아서 정해서 저장합니다.
+단, **볼트는 내 PC에 있는 폴더**라서 클라우드(웹) 세션에서는 저장되지 않습니다.
+
 ## 요약 형식
 
 한 줄 요약 / 핵심 포인트 / 상세 요약 / 인상적인 문장 / 다음 행동. 형식을 바꾸려면

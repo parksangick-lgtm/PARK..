@@ -78,6 +78,21 @@ def extract_video_id(url_or_id: str) -> str:
     raise ValueError(f"영상 ID를 찾을 수 없습니다: {url_or_id}")
 
 
+def fetch_video_title(video_id: str) -> str | None:
+    """영상 제목을 가져온다(옵시디언 노트 이름용). 실패하면 None."""
+    try:
+        response = requests.get(
+            "https://www.youtube.com/oembed",
+            params={"url": f"https://www.youtube.com/watch?v={video_id}", "format": "json"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        title = response.json().get("title", "").strip()
+        return title or None
+    except (requests.RequestException, ValueError):
+        return None
+
+
 def fetch_transcript(video_id: str, languages: list[str]) -> str:
     """수동 자막을 우선 쓰고, 없으면 자동 생성 자막으로 넘어간다."""
     api = YouTubeTranscriptApi()
@@ -152,6 +167,16 @@ def main() -> int:
     parser.add_argument(
         "--stdout", action="store_true", help="파일로 저장하지 않고 화면에만 출력"
     )
+    parser.add_argument(
+        "--obsidian",
+        action="store_true",
+        help="옵시디언 볼트에도 노트로 저장 (.env 의 OBSIDIAN_VAULT 사용)",
+    )
+    parser.add_argument(
+        "--obsidian-folder",
+        default="유튜브 요약",
+        help="옵시디언 볼트 안의 저장 폴더 (기본: 유튜브 요약)",
+    )
     args = parser.parse_args()
 
     load_env_file()
@@ -180,6 +205,23 @@ def main() -> int:
 
     path = write_summary(args.out_dir, video_id, url, body)
     print(f"저장 완료: {path}")
+
+    if args.obsidian:
+        from obsidian_save import save_note
+
+        title = fetch_video_title(video_id) or f"유튜브 요약 {video_id}"
+        try:
+            note_path = save_note(
+                body=body,
+                title=title,
+                folder=args.obsidian_folder,
+                tags=["유튜브", "요약"],
+                source=url,
+                date_prefix=True,
+            )
+            print(f"옵시디언 저장 완료: {note_path}")
+        except (RuntimeError, ValueError) as exc:
+            print(f"옵시디언 저장 실패: {exc}", file=sys.stderr)
 
     if step_summary := os.environ.get("GITHUB_STEP_SUMMARY"):
         Path(step_summary).write_text(body, encoding="utf-8")
