@@ -64,10 +64,11 @@ find wiki -name "*.md" ! -name "README.md" | while read -r f; do
   grep -q "$base" index.md || note "$f : index.md 에 등록 안 됨"
 done; echo "  (검출 없으면 통과)"
 
-echo; echo "[7] 중복 제목"
+echo; echo "[7] 중복 정보 (제목 + 본문 문장 겹침)"
 targets | xargs grep -h '^title:' 2>/dev/null | sort | uniq -d | while read -r t; do
   note "제목 중복 → $t"
-done; echo "  (검출 없으면 통과)"
+done
+python3 tools/dupcheck.py
 
 echo; echo "[8] 모순 (미판정 상태로 남은 것)"
 grep -rn '미판정' wiki/ 2>/dev/null | while IFS= read -r h; do note "$h"; done

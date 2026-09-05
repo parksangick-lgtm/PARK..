@@ -38,6 +38,7 @@ tags: [index, 진입점]
 - **`templates/`** — 노트 템플릿 (`출장음식-행사기록.md` 포함)
 - **`tools/lint.sh`** — 위키 건강검진 (12개 검사)
 - **`tools/raw-guard.sh`** — Raw 불변성 지문 대조
+- **`tools/promote-check.sh`** — wiki 승격 관문 (승격 전 필수)
 
 ## 📚 지식 영역
 
