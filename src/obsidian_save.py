@@ -12,7 +12,10 @@
 사용 예:
     python src/obsidian_save.py --list-vaults          # 볼트 찾기
     python src/obsidian_save.py --title "제목" --folder "유튜브 요약" \
-        --tags 유튜브,요약 --source "https://youtu.be/..." < 본문.md
+        --tags 유튜브,요약 --source "https://youtu.be/..." --file 본문.md
+
+본문은 --file 로 넘기는 것을 권한다. 윈도우 PowerShell 은 파이프(|)를 통과하는 글자를
+ASCII 로 바꿔서 한글이 ?? 로 조용히 깨진다.
 """
 
 from __future__ import annotations
@@ -348,7 +351,12 @@ def main() -> int:
     parser.add_argument("--tags", default="", help="태그 (쉼표 구분, 예: 유튜브,요약)")
     parser.add_argument("--source", default="", help="출처 링크")
     parser.add_argument("--vault", default="", help="볼트 폴더 경로 (기본: OBSIDIAN_VAULT)")
-    parser.add_argument("--file", type=Path, help="본문이 들어 있는 파일 (기본: 표준입력)")
+    parser.add_argument(
+        "--file",
+        type=Path,
+        help="본문이 들어 있는 파일 (권장). 없으면 표준입력을 읽지만, 윈도우에서 파이프로"
+        " 넘긴 한글은 깨진다",
+    )
     parser.add_argument("--filename", help="파일 이름을 제목과 다르게 쓰고 싶을 때")
     parser.add_argument(
         "--mode",
