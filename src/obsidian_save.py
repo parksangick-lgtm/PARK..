@@ -238,16 +238,34 @@ def target_path(
     date_prefix: bool = False,
     auto_number: bool = False,
 ) -> Path:
-    """볼트 안의 저장 위치를 계산한다(볼트 밖으로 나가지 못하게 막는다)."""
+    """볼트 안의 저장 위치를 계산한다(볼트 밖으로 나가지 못하게 막는다).
+
+    폴더 이름이 볼트 폴더 이름과 같으면 그 한 단계는 건너뛴다. 예를 들어
+    `바이브코딩-위키` 폴더 자체를 볼트로 열어 둔 사람에게 `--folder 바이브코딩-위키`
+    를 그대로 적용하면 `바이브코딩-위키/바이브코딩-위키/` 처럼 같은 이름이 두 번
+    겹쳐서, 노트가 엉뚱한 곳에 들어가고 `--auto-number` 도 번호를 1부터 다시 센다.
+    """
     if date_prefix and auto_number:
         raise ValueError("--date-prefix 와 --auto-number 는 같이 쓸 수 없습니다.")
 
     stem = sanitize_filename(filename or title)
 
-    directory = vault
-    for part in Path(folder.replace("\\", "/")).parts if folder else ():
+    parts = list(Path(folder.replace("\\", "/")).parts) if folder else []
+    for part in parts:
         if part in ("..", "/", "."):
             raise ValueError(f"폴더 이름에 쓸 수 없는 값입니다: {folder!r}")
+
+    # 윈도우/맥은 폴더 이름의 대소문자를 구분하지 않으므로 맞춰서 비교한다.
+    if parts and sanitize_filename(parts[0]).casefold() == vault.name.casefold():
+        print(
+            f"볼트 폴더 이름이 이미 '{vault.name}' 라서, 그 아래에 같은 이름의 폴더를"
+            " 또 만들지 않고 볼트 바로 밑에 저장합니다.",
+            file=sys.stderr,
+        )
+        parts = parts[1:]
+
+    directory = vault
+    for part in parts:
         directory = directory / sanitize_filename(part)
 
     if date_prefix:
