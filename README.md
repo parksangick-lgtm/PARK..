@@ -109,6 +109,14 @@ python src/obsidian_save.py --set-vault "C:\Users\내이름\Documents\내볼트"
 
 홈페이지 작업 폴더 등 **다른 폴더에서도 쓰려면 스킬을 설치**해야 합니다.
 
+윈도우는 PowerShell 에 아래 한 줄이면 내려받기부터 볼트 등록까지 끝납니다.
+
+```powershell
+[Net.ServicePointManager]::SecurityProtocol='Tls12'; iwr https://raw.githubusercontent.com/parksangick-lgtm/PARK../main/install.ps1 -OutFile "$env:TEMP\ps.ps1" -UseBasicParsing; powershell -ExecutionPolicy Bypass -File "$env:TEMP\ps.ps1"
+```
+
+파일을 직접 실행해도 됩니다.
+
 - 윈도우: `스킬설치.bat` 더블클릭
 - 맥: `스킬설치.command` 더블클릭
 
