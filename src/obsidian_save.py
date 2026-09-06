@@ -62,7 +62,7 @@ def detect_vaults() -> list[Path]:
         try:
             if not config.is_file():
                 continue
-            data = json.loads(config.read_text(encoding="utf-8"))
+            data = json.loads(config.read_text(encoding="utf-8-sig"))
             vaults = data.get("vaults")
             if not isinstance(vaults, dict):
                 continue
@@ -84,10 +84,14 @@ def detect_vaults() -> list[Path]:
 
 
 def load_env_file(path: Path = Path(".env")) -> None:
-    """.env 파일이 있으면 KEY=VALUE 를 환경변수로 읽어들인다."""
+    """.env 파일이 있으면 KEY=VALUE 를 환경변수로 읽어들인다.
+
+    메모장 등 윈도우 프로그램이 만든 파일은 앞에 보이지 않는 표식(BOM)이 붙는다.
+    utf-8-sig 로 읽으면 그 표식을 알아서 떼어낸다. 이 파일의 다른 읽기도 같다.
+    """
     if not path.is_file():
         return
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -121,7 +125,7 @@ def resolve_vault(explicit: str | None = None) -> Path:
     """
     raw = (explicit or os.environ.get("OBSIDIAN_VAULT", "")).strip().strip("'\"")
     if not raw and VAULT_CONFIG.is_file():
-        raw = VAULT_CONFIG.read_text(encoding="utf-8").strip().strip("'\"")
+        raw = VAULT_CONFIG.read_text(encoding="utf-8-sig").strip().strip("'\"")
     if not raw:
         detected = detect_vaults()
         if detected:
@@ -292,7 +296,7 @@ def save_note(
         body = stripped
 
     if mode == "append" and path.exists():
-        content = path.read_text(encoding="utf-8").rstrip() + "\n\n---\n\n" + body + "\n"
+        content = path.read_text(encoding="utf-8-sig").rstrip() + "\n\n---\n\n" + body + "\n"
     else:
         if mode == "new":
             path = _unique_path(path)
@@ -379,7 +383,7 @@ def main() -> int:
         print("--title 이 필요합니다. (예: --title \"노트 제목\")", file=sys.stderr)
         return 1
 
-    body = args.file.read_text(encoding="utf-8") if args.file else sys.stdin.read()
+    body = args.file.read_text(encoding="utf-8-sig") if args.file else sys.stdin.read().lstrip("\ufeff")
 
     try:
         path = save_note(
