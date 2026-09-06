@@ -128,7 +128,10 @@ python ~/.claude/skills/obsidian-save/obsidian_save.py \
 
 ### 폴더와 태그
 
-- **폴더**: 항상 `바이브코딩-위키` (`.env` 의 `OBSIDIAN_VIBE_FOLDER` 가 있으면 그 값)
+- **폴더**: 항상 `바이브코딩-위키` (`.env` 의 `OBSIDIAN_VIBE_FOLDER` 가 있으면 그 값).
+  `바이브코딩-위키` 폴더 자체를 볼트로 열어 둔 사람도 있다. 그때는 스크립트가 같은
+  이름이 두 번 겹치지 않게 알아서 볼트 바로 밑에 저장한다. 그러니 볼트가 어떻게
+  잡혀 있든 **늘 이대로 넘기면 된다.**
 - **태그**: `바이브코딩`, `학습` 은 항상. 여기에 쓴 기술을 더한다(`HTML`, `CSS`, `React` 등)
 
 ### 볼트 경로
@@ -151,8 +154,10 @@ python ~/.claude/skills/obsidian-save/obsidian_save.py --list-vaults
 1. 볼트 경로를 찾는다: `~/.claude/obsidian_vault.txt` → 없으면 옵시디언 설정 파일
    (윈도우 `%APPDATA%\obsidian\obsidian.json`, 맥 `~/Library/Application Support/obsidian/obsidian.json`,
    리눅스 `~/.config/obsidian/obsidian.json`) 안의 `vaults` 목록
-2. `<볼트>/바이브코딩-위키/` 를 훑어 가장 큰 번호를 찾고 +1 한다
-3. `<볼트>/바이브코딩-위키/17-제목.md` 로 쓴다. 맨 위에 속성 블록을 붙인다:
+2. 저장할 폴더를 정한다. **볼트 폴더 이름이 이미 `바이브코딩-위키` 면 그 아래에
+   같은 이름의 폴더를 또 만들지 말고 볼트 바로 밑에 쓴다.** 아니면 `<볼트>/바이브코딩-위키/`.
+3. 그 폴더를 훑어 가장 큰 번호를 찾고 +1 해서 `17-제목.md` 로 쓴다.
+   맨 위에 속성 블록을 붙인다:
 
 ```markdown
 ---
