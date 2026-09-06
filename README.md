@@ -112,7 +112,7 @@ python src/obsidian_save.py --set-vault "C:\Users\내이름\Documents\내볼트"
 윈도우는 PowerShell 에 아래 한 줄이면 내려받기부터 볼트 등록까지 끝납니다.
 
 ```powershell
-[Net.ServicePointManager]::SecurityProtocol='Tls12'; iwr https://raw.githubusercontent.com/parksangick-lgtm/PARK../main/install.ps1 -OutFile "$env:TEMP\ps.ps1" -UseBasicParsing; powershell -ExecutionPolicy Bypass -File "$env:TEMP\ps.ps1"
+curl.exe -sSL -o "$env:TEMP\ps.ps1" https://raw.githubusercontent.com/parksangick-lgtm/PARK../main/install.ps1; powershell -ExecutionPolicy Bypass -File "$env:TEMP\ps.ps1"
 ```
 
 파일을 직접 실행해도 됩니다.

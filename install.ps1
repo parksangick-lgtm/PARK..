@@ -1,7 +1,7 @@
 ﻿# 옵시디언 저장 스킬 설치 (윈도우)
 #
 # 사용법 - PowerShell 창에 아래 한 줄을 붙여넣고 Enter:
-#   irm https://raw.githubusercontent.com/parksangick-lgtm/PARK../main/install.ps1 | iex
+#   curl.exe -sSL -o "$env:TEMP\ps.ps1" https://raw.githubusercontent.com/parksangick-lgtm/PARK../main/install.ps1; powershell -ExecutionPolicy Bypass -File "$env:TEMP\ps.ps1"
 #
 # 하는 일: 최신 파일 내려받기 -> 스킬을 홈 폴더에 복사 -> 옵시디언 볼트 자동 등록
 
@@ -9,6 +9,22 @@ $ErrorActionPreference = "Stop"
 
 # 옛 윈도우의 PowerShell 은 기본 보안 연결(TLS)이 낮아 깃허브에 접속하지 못한다.
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
+
+# 저장소 이름이 "PARK.." 처럼 점으로 끝나면 PowerShell 의 Invoke-WebRequest 가
+# 주소를 정리한다며 점을 떼어내서 404 가 난다. 그래서 주소를 그대로 보내는
+# curl.exe(윈도우 10 1803 이상 기본 탑재)를 먼저 쓴다.
+function Get-RemoteFile($url, $outFile) {
+    $curl = Join-Path $env:SystemRoot "System32\curl.exe"
+    if (Test-Path $curl) {
+        & $curl -sSL --fail -o $outFile $url
+        if ($LASTEXITCODE -ne 0) { throw "내려받기에 실패했습니다 (curl 오류 $LASTEXITCODE)`n주소: $url" }
+    }
+    else {
+        Write-Host "     (curl.exe 가 없어 PowerShell 로 내려받습니다)"
+        Invoke-WebRequest -Uri $url -OutFile $outFile -UseBasicParsing
+    }
+    if (-not (Test-Path $outFile)) { throw "내려받은 파일이 없습니다: $outFile" }
+}
 
 Write-Host ""
 Write-Host "================================"
@@ -26,7 +42,7 @@ try {
     if (Test-Path $work) { Remove-Item -LiteralPath $work -Recurse -Force }
     New-Item -ItemType Directory -Path $work -Force | Out-Null
     $zipPath = Join-Path $work "main.zip"
-    Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
+    Get-RemoteFile $zipUrl $zipPath
 
     # 2) 압축을 풀고 스킬 복사
     Write-Host "2/3  스킬을 복사하는 중..."
