@@ -1,0 +1,8 @@
+# 윈도우 배치 파일은 반드시 윈도우 줄바꿈(CRLF)이어야 한다.
+# 리눅스 줄바꿈(LF)으로 저장되면 cmd.exe 가 여러 줄짜리 if 블록을 제대로 못 읽어서
+# 더블클릭해도 아무 일이 안 일어난다.
+*.bat text eol=crlf
+
+# 맥/리눅스 스크립트는 반대로 LF 여야 한다.
+*.command text eol=lf
+*.sh text eol=lf
