@@ -50,10 +50,11 @@ python src/summarize.py VIDEO_ID --lang ja,en
 요약이나 대본을 옵시디언 볼트에 마크다운 노트로 바로 저장할 수 있습니다.
 옵시디언 볼트는 `.md` 파일이 들어 있는 그냥 폴더라서, 파일만 써 넣으면 앱에 바로 나타납니다.
 
-먼저 `.env` 에 볼트 폴더 경로를 넣습니다.
+볼트 경로는 **옵시디언 설정에서 자동으로 찾습니다.** 따로 설정할 게 없습니다.
+찾은 볼트를 확인하려면:
 
-```
-OBSIDIAN_VAULT=C:\Users\내이름\Documents\내볼트
+```bash
+python src/obsidian_save.py --list-vaults
 ```
 
 **유튜브 요약을 저장할 때** — `--obsidian` 을 붙입니다.
@@ -78,16 +79,19 @@ python src/obsidian_save.py --title "노트 제목" --folder "쇼츠 대본" \
 | `--tags` | 태그, 쉼표 구분 |
 | `--source` | 출처 링크 |
 | `--date-prefix` | 파일 이름 앞에 날짜 붙이기 |
+| `--auto-number` | 폴더의 기존 번호를 이어서 `17-` 처럼 붙이기 |
 | `--mode` | 이름이 겹칠 때 `new`(기본) / `overwrite` / `append` |
 | `--dry-run` | 저장하지 않고 결과만 확인 |
 
-볼트 경로는 한 번만 등록해 두면 어느 폴더에서 실행하든 찾아 씁니다.
+볼트를 여러 개 쓰거나 자동 탐색이 안 되면 직접 등록할 수 있습니다.
 
 ```bash
+python src/obsidian_save.py --set-vault auto              # 자동으로 찾은 볼트 등록
 python src/obsidian_save.py --set-vault "C:\Users\내이름\Documents\내볼트"
 ```
 
-찾는 순서는 `--vault` → `OBSIDIAN_VAULT`(환경변수·`.env`) → `~/.claude/obsidian_vault.txt` 입니다.
+찾는 순서: `--vault` → `OBSIDIAN_VAULT`(환경변수·`.env`) → `~/.claude/obsidian_vault.txt`
+→ 옵시디언 설정 파일(`obsidian.json`) 자동 탐색.
 
 ## Claude Code 스킬
 
@@ -97,15 +101,18 @@ python src/obsidian_save.py --set-vault "C:\Users\내이름\Documents\내볼트"
 | `vibe-coding-save` | **"5번"**, "5번으로 실행" | 바이브코딩으로 사이트 만든 작업 내용을 학습 노트로 저장 |
 
 **5번 스킬**은 홈페이지를 만든 뒤 그날 한 일을 노트 한 장으로 정리해 볼트의
-`바이브코딩 학습` 폴더에 넣습니다. 담기는 것: 한 줄 요약 / 오늘 만든 것 / 파일 구조 /
-핵심 코드 / 막혔던 것과 해결법 / 배운 것 / 다음에 할 일.
+`바이브코딩-위키` 폴더에 넣습니다. 기존 노트가 `01-`, `02-` 로 정리돼 있으면
+그 번호를 이어받아 `17-회사홈페이지-첫화면과-메뉴-만들기.md` 처럼 저장합니다.
+
+담기는 것: 한 줄 요약 / 오늘 만든 것 / 파일 구조 / 핵심 코드 /
+막혔던 것과 해결법 / 배운 것 / 다음에 할 일.
 
 홈페이지 작업 폴더 등 **다른 폴더에서도 쓰려면 스킬을 설치**해야 합니다.
 
 - 윈도우: `스킬설치.bat` 더블클릭
 - 맥: `스킬설치.command` 더블클릭
 
-스킬을 `~/.claude/skills/` 로 복사하고 볼트 경로까지 한 번에 등록합니다.
+스킬을 `~/.claude/skills/` 로 복사하고, 옵시디언 볼트를 자동으로 찾아 등록합니다.
 
 > **볼트는 내 PC에 있는 폴더**라서 클라우드(웹) 세션에서는 저장되지 않습니다.
 > 내 PC의 Claude Code 에서 실행하세요.

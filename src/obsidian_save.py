@@ -6,7 +6,11 @@
 이 파일은 일부러 표준 라이브러리만 쓴다. pip 설치 없이 단독 실행할 수 있어야
 요약 기능과 상관없이 어디서든 노트를 저장할 수 있기 때문이다.
 
+볼트 경로는 옵시디언 설정 파일(obsidian.json)에서 자동으로 찾는다. 그래서 보통은
+사용자가 경로를 직접 찾아 입력하지 않아도 된다.
+
 사용 예:
+    python src/obsidian_save.py --list-vaults          # 볼트 찾기
     python src/obsidian_save.py --title "제목" --folder "유튜브 요약" \
         --tags 유튜브,요약 --source "https://youtu.be/..." < 본문.md
 """
@@ -14,6 +18,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -33,6 +38,51 @@ MAX_FILENAME_BYTES = 150
 VAULT_CONFIG = Path.home() / ".claude" / "obsidian_vault.txt"
 
 
+def obsidian_config_candidates() -> list[Path]:
+    """옵시디언이 볼트 목록을 적어 두는 파일 위치 후보(윈도우/맥/리눅스)."""
+    home = Path.home()
+    appdata = os.environ.get("APPDATA", "")
+    candidates = [
+        Path(appdata) / "obsidian" / "obsidian.json" if appdata else None,
+        home / "AppData" / "Roaming" / "obsidian" / "obsidian.json",
+        home / "Library" / "Application Support" / "obsidian" / "obsidian.json",
+        home / ".config" / "obsidian" / "obsidian.json",
+    ]
+    return [c for c in candidates if c is not None]
+
+
+def detect_vaults() -> list[Path]:
+    """옵시디언 설정에서 볼트 목록을 읽는다. 최근에 연 것이 앞으로 온다.
+
+    옵시디언은 열어 본 볼트 목록을 obsidian.json 에 적어 둔다. 그래서 사용자가
+    경로를 직접 찾아 입력하지 않아도 볼트를 알아낼 수 있다.
+    설정 파일 모양이 다르거나 없으면 빈 목록을 돌려주고 조용히 넘어간다.
+    """
+    for config in obsidian_config_candidates():
+        try:
+            if not config.is_file():
+                continue
+            data = json.loads(config.read_text(encoding="utf-8"))
+            vaults = data.get("vaults")
+            if not isinstance(vaults, dict):
+                continue
+        except (OSError, ValueError):
+            continue
+
+        found = []
+        for info in vaults.values():
+            if not isinstance(info, dict) or not info.get("path"):
+                continue
+            path = Path(str(info["path"])).expanduser()
+            if path.is_dir():
+                # 지금 열려 있는 볼트를 맨 앞으로, 그다음은 최근에 연 순서로.
+                found.append((0 if info.get("open") else 1, -int(info.get("ts") or 0), path))
+
+        if found:
+            return [path for _, _, path in sorted(found)]
+    return []
+
+
 def load_env_file(path: Path = Path(".env")) -> None:
     """.env 파일이 있으면 KEY=VALUE 를 환경변수로 읽어들인다."""
     if not path.is_file():
@@ -47,6 +97,13 @@ def load_env_file(path: Path = Path(".env")) -> None:
 
 def save_vault_config(path: str) -> Path:
     """볼트 경로를 홈 폴더에 기억해 둔다(어느 폴더에서 실행해도 찾을 수 있게)."""
+    if path == "auto":
+        detected = detect_vaults()
+        if not detected:
+            raise RuntimeError(
+                "옵시디언 설정에서 볼트를 찾지 못했습니다. 경로를 직접 알려주세요."
+            )
+        path = str(detected[0])
     # 윈도우에서 "경로 복사"로 붙여넣으면 따옴표가 같이 들어온다.
     vault = Path(path.strip().strip("'\"")).expanduser()
     if not vault.is_dir():
@@ -57,17 +114,23 @@ def save_vault_config(path: str) -> Path:
 
 
 def resolve_vault(explicit: str | None = None) -> Path:
-    """볼트 폴더를 찾는다. --vault > OBSIDIAN_VAULT > 홈 폴더 설정 파일 순서."""
+    """볼트 폴더를 찾는다.
+
+    --vault > OBSIDIAN_VAULT > 기억해 둔 설정 파일 > 옵시디언 설정에서 자동 찾기.
+    마지막 단계 덕분에 보통은 사용자가 경로를 직접 찾을 필요가 없다.
+    """
     raw = (explicit or os.environ.get("OBSIDIAN_VAULT", "")).strip().strip("'\"")
     if not raw and VAULT_CONFIG.is_file():
         raw = VAULT_CONFIG.read_text(encoding="utf-8").strip().strip("'\"")
     if not raw:
+        detected = detect_vaults()
+        if detected:
+            return detected[0]
         raise RuntimeError(
-            "옵시디언 볼트 경로를 모르겠습니다. 아래 중 하나를 해주세요.\n"
-            "  1) 한 번만 등록해 두기 (어느 폴더에서든 쓸 수 있음):\n"
+            "옵시디언 볼트를 찾지 못했습니다.\n"
+            "  옵시디언을 한 번도 실행하지 않았거나, 설치 위치가 다를 수 있습니다.\n"
+            "  --list-vaults 로 찾은 볼트를 확인하거나, 아래처럼 직접 알려주세요.\n"
             "     python obsidian_save.py --set-vault \"볼트폴더경로\"\n"
-            "  2) 이번만 직접 알려주기: --vault \"볼트폴더경로\"\n"
-            "  3) 이 프로젝트의 .env 에 OBSIDIAN_VAULT=볼트폴더경로 넣기\n"
             "  (볼트 폴더 = 옵시디언에서 열어 둔 그 폴더. 안에 .obsidian 폴더가 있습니다.)"
         )
 
@@ -136,6 +199,22 @@ def build_frontmatter(
     return "\n".join(lines) + "\n\n"
 
 
+def next_number(directory: Path, width: int = 2) -> str:
+    """폴더 안의 `01-`, `02-` 형태 파일을 보고 다음 번호를 계산한다.
+
+    기존 노트가 `01-웹개발-학습로드맵` 처럼 번호로 정리돼 있을 때, 그 순서를
+    이어서 붙이기 위한 것이다. 폴더가 없으면 01 부터 시작한다.
+    """
+    highest = 0
+    if directory.is_dir():
+        for item in directory.glob("*.md"):
+            match = re.match(r"(\d+)-", item.stem)
+            if match:
+                highest = max(highest, int(match.group(1)))
+                width = max(width, len(match.group(1)))
+    return str(highest + 1).zfill(width)
+
+
 def _unique_path(path: Path) -> Path:
     """같은 이름이 있으면 뒤에 2, 3... 을 붙인다."""
     if not path.exists():
@@ -153,17 +232,24 @@ def target_path(
     folder: str = "",
     filename: str | None = None,
     date_prefix: bool = False,
+    auto_number: bool = False,
 ) -> Path:
     """볼트 안의 저장 위치를 계산한다(볼트 밖으로 나가지 못하게 막는다)."""
+    if date_prefix and auto_number:
+        raise ValueError("--date-prefix 와 --auto-number 는 같이 쓸 수 없습니다.")
+
     stem = sanitize_filename(filename or title)
-    if date_prefix:
-        stem = f"{datetime.now().strftime('%Y-%m-%d')} {stem}"
 
     directory = vault
     for part in Path(folder.replace("\\", "/")).parts if folder else ():
         if part in ("..", "/", "."):
             raise ValueError(f"폴더 이름에 쓸 수 없는 값입니다: {folder!r}")
         directory = directory / sanitize_filename(part)
+
+    if date_prefix:
+        stem = f"{datetime.now().strftime('%Y-%m-%d')} {stem}"
+    elif auto_number:
+        stem = f"{next_number(directory)}-{stem.lstrip('-')}"
 
     path = directory / f"{stem}.md"
     if not path.resolve().parent.is_relative_to(vault):
@@ -181,6 +267,7 @@ def save_note(
     filename: str | None = None,
     mode: str = "new",
     date_prefix: bool = False,
+    auto_number: bool = False,
     frontmatter: bool = True,
     extra: dict[str, str] | None = None,
     dry_run: bool = False,
@@ -193,7 +280,7 @@ def save_note(
         raise ValueError(f"mode 는 new, overwrite, append 중 하나여야 합니다: {mode}")
 
     vault_path = vault if isinstance(vault, Path) else resolve_vault(vault)
-    path = target_path(vault_path, title, folder, filename, date_prefix)
+    path = target_path(vault_path, title, folder, filename, date_prefix, auto_number)
 
     body = body.strip()
     if not body:
@@ -248,11 +335,35 @@ def main() -> int:
         help="이름이 겹칠 때: new=새 이름, overwrite=덮어쓰기, append=뒤에 붙이기",
     )
     parser.add_argument("--date-prefix", action="store_true", help="파일 이름 앞에 날짜 붙이기")
+    parser.add_argument(
+        "--auto-number",
+        action="store_true",
+        help="폴더의 기존 번호를 이어서 `17-` 처럼 앞에 붙이기",
+    )
+    parser.add_argument(
+        "--list-vaults", action="store_true", help="옵시디언에 등록된 볼트를 찾아서 보여주기"
+    )
     parser.add_argument("--no-frontmatter", action="store_true", help="속성(---) 블록 없이 저장")
     parser.add_argument("--dry-run", action="store_true", help="저장하지 않고 결과만 보여주기")
     args = parser.parse_args()
 
     load_env_file()
+
+    if args.list_vaults:
+        detected = detect_vaults()
+        if not detected:
+            print(
+                "옵시디언 설정에서 볼트를 찾지 못했습니다.\n"
+                "옵시디언을 한 번 실행한 뒤 다시 시도하거나, 경로를 직접 알려주세요.",
+                file=sys.stderr,
+            )
+            return 1
+        print("찾은 볼트 (맨 위가 지금 열려 있거나 가장 최근에 연 볼트):")
+        for index, vault in enumerate(detected, 1):
+            print(f"  {index}. {vault}")
+        print("\n이 중 맨 위 볼트를 계속 쓰려면:")
+        print("  python obsidian_save.py --set-vault auto")
+        return 0
 
     if args.set_vault:
         try:
@@ -281,6 +392,7 @@ def main() -> int:
             filename=args.filename,
             mode=args.mode,
             date_prefix=args.date_prefix,
+            auto_number=args.auto_number,
             frontmatter=not args.no_frontmatter,
             dry_run=args.dry_run,
         )
