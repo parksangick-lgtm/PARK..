@@ -1,0 +1,67 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "옵시디언에 저장 (지금 연 파일)",
+      "detail": "편집 중인 파일을 볼트에 노트로 저장합니다. 폴더와 태그를 물어봅니다.",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "${userHome}/.claude/skills/obsidian-save/obsidian_save.py",
+        "--title", "${input:노트제목}",
+        "--folder", "${input:저장폴더}",
+        "--tags", "${input:태그}",
+        "--file", "${file}"
+      ],
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "옵시디언에 저장 (바이브코딩-위키, 번호 이어서)",
+      "detail": "바이브코딩-위키 폴더에 17-, 18- 처럼 번호를 이어 붙여 저장합니다.",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "${userHome}/.claude/skills/obsidian-save/obsidian_save.py",
+        "--title", "${input:노트제목}",
+        "--folder", "바이브코딩-위키",
+        "--tags", "바이브코딩,학습",
+        "--auto-number",
+        "--file", "${file}"
+      ],
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "옵시디언 볼트 확인",
+      "detail": "지금 어느 볼트에 저장되도록 설정돼 있는지 보여줍니다.",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "${userHome}/.claude/skills/obsidian-save/obsidian_save.py",
+        "--list-vaults"
+      ],
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "노트제목",
+      "type": "promptString",
+      "description": "노트 제목 (이게 파일 이름이 됩니다)"
+    },
+    {
+      "id": "저장폴더",
+      "type": "promptString",
+      "description": "볼트 안의 폴더 (비우면 맨 위에 저장)",
+      "default": "메모"
+    },
+    {
+      "id": "태그",
+      "type": "promptString",
+      "description": "태그 (쉼표로 구분)",
+      "default": "메모"
+    }
+  ]
+}
