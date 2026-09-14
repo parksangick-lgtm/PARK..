@@ -206,20 +206,57 @@ def build_frontmatter(
     return "\n".join(lines) + "\n\n"
 
 
+#: 노트 이름 맨 앞의 번호. 구분자는 `-` 말고도 `.`, `_`, 공백을 인정한다.
+#: `-` 만 세면 사람이 손으로 만든 `20.옵시디언...` 같은 이름이 안 세어져서,
+#: 다음 번호가 20 으로 다시 나오고 번호가 겹친다.
+NUMBER_PREFIX_RE = re.compile(r"^(\d+)[-._ ]")
+
+
+def existing_numbers(directory: Path) -> dict:
+    """폴더 안 노트들의 `번호 -> [파일 이름]` 표를 만든다."""
+    found: dict = {}
+    if directory.is_dir():
+        for item in sorted(directory.glob("*.md")):
+            match = NUMBER_PREFIX_RE.match(item.stem)
+            if match:
+                found.setdefault(int(match.group(1)), []).append(item.name)
+    return found
+
+
 def next_number(directory: Path, width: int = 2) -> str:
-    """폴더 안의 `01-`, `02-` 형태 파일을 보고 다음 번호를 계산한다.
+    """폴더 안의 `01-`, `02.`, `03_` 형태 파일을 보고 다음 번호를 계산한다.
 
     기존 노트가 `01-웹개발-학습로드맵` 처럼 번호로 정리돼 있을 때, 그 순서를
     이어서 붙이기 위한 것이다. 폴더가 없으면 01 부터 시작한다.
+
+    구분자를 `-` 하나로만 보면, 사람이 손으로 붙인 `20.제목` 이나 다른 PC 에서
+    동기화로 들어온 이름이 세어지지 않아 같은 번호를 다시 내준다.
     """
     highest = 0
-    if directory.is_dir():
-        for item in directory.glob("*.md"):
-            match = re.match(r"(\d+)-", item.stem)
+    for number, names in existing_numbers(directory).items():
+        highest = max(highest, number)
+        for name in names:
+            match = NUMBER_PREFIX_RE.match(Path(name).stem)
             if match:
-                highest = max(highest, int(match.group(1)))
                 width = max(width, len(match.group(1)))
     return str(highest + 1).zfill(width)
+
+
+def warn_duplicate_numbers(directory: Path, out=None) -> list:
+    """같은 번호를 쓰는 노트가 둘 이상이면 알린다.
+
+    번호가 겹쳐도 파일은 정상적으로 저장되기 때문에, 알리지 않으면 사용자가
+    한참 뒤에야 발견한다(그 전까지는 저장이 성공한 것으로 보인다).
+    """
+    import sys as _sys
+    out = out or _sys.stdout
+    dupes = {n: names for n, names in existing_numbers(directory).items() if len(names) > 1}
+    for number, names in sorted(dupes.items()):
+        print(f"[알림] 번호 {number} 를 쓰는 노트가 {len(names)} 개입니다:", file=out)
+        for name in names:
+            print(f"         - {name}", file=out)
+        print("         번호를 정리하시려면 하나를 다음 번호로 바꿔 주세요.", file=out)
+    return sorted(dupes)
 
 
 def _unique_path(path: Path) -> Path:
@@ -432,8 +469,28 @@ def main() -> int:
 
     if not args.dry_run:
         print(f"저장 완료: {path}")
+        if args.auto_number:
+            # 번호를 자동으로 붙였을 때만: 같은 번호가 둘 이상이면 지금 알린다.
+            # 알리지 않으면 저장은 성공한 것으로 보이고, 겹침은 한참 뒤에 발견된다.
+            warn_duplicate_numbers(path.parent)
     return 0
 
 
+def _force_utf8_output() -> None:
+    """콘솔이 UTF-8 이라고 가정하지 않는다.
+
+    윈도우 기본 콘솔은 cp949 라서, 한글 안내문을 그냥 print 하면 `??` 나 `□` 로
+    깨진다. 안내문을 읽는 쪽이 사람이든 에이전트든, 깨진 안내문은 안내문이
+    없는 것과 같다 — "화면만 깨졌고 저장은 정상"인지는 파일을 따로 열어 봐야만
+    알 수 있게 된다.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
 if __name__ == "__main__":
+    _force_utf8_output()
     raise SystemExit(main())
