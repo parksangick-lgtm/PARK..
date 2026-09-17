@@ -147,6 +147,78 @@ def resolve_vault(explicit: str | None = None) -> Path:
     return vault.resolve()
 
 
+def vault_has_folder(vault: Path, folder: str) -> bool:
+    """이 볼트 안에 그 폴더가 이미 있는지 본다.
+
+    볼트 폴더 이름 자체가 대상 폴더와 같으면(예: `바이브코딩-위키` 를 볼트로 열어 둔 경우)
+    target_path 가 한 단계를 건너뛰므로 여기서도 똑같이 건너뛴다. 두 곳의 판정이
+    어긋나면 "폴더가 없다"고 잘못 알리게 된다.
+    """
+    parts = [p for p in Path(folder.replace("\\", "/")).parts if p not in ("..", "/", ".")]
+    if not parts:
+        return True  # 폴더를 지정하지 않았으면 볼트 바로 밑 — 따질 것이 없다
+    if sanitize_filename(parts[0]).casefold() == vault.name.casefold():
+        parts = parts[1:]
+        if not parts:
+            return True
+    directory = vault
+    for part in parts:
+        directory = directory / sanitize_filename(part)
+    return directory.is_dir()
+
+
+def resolve_vault_for_folder(
+    explicit: str | None, folder: str, allow_new_folder: bool = False
+) -> Path:
+    """볼트를 고르되, 그 볼트에 대상 폴더가 실제로 있는지까지 확인한다.
+
+    폴더가 없는데 그냥 저장하면 오류 없이 **새 폴더가 생기고 번호가 1부터 다시**
+    매겨진다. 저장은 성공하고 파일도 멀쩡하므로 아무 경고도 남지 않고, 사용자는
+    한참 뒤에 "노트가 안 보인다"로 알게 된다. 그래서 여기서 멈춘다.
+
+    - 기억해 둔 볼트에 폴더가 없고 **다른 볼트 한 곳에만** 있으면 그쪽으로 바꾼다.
+    - 여러 볼트에 있으면 고르지 않고 멈춘다(어느 쪽인지 기계가 알 수 없다).
+    - 어디에도 없으면 멈춘다. 정말 새로 만들 때만 --new-folder 를 붙인다.
+    """
+    vault = resolve_vault(explicit)
+    if not folder or vault_has_folder(vault, folder):
+        return vault
+
+    others = [
+        v
+        for v in detect_vaults()
+        if v.resolve() != vault.resolve() and vault_has_folder(v, folder)
+    ]
+
+    # --vault 로 직접 지정했으면 그 뜻을 존중해서 다른 볼트로 옮기지 않는다.
+    if not explicit and len(others) == 1:
+        print(
+            f"'{folder}' 폴더가 이 볼트에는 없어서, 그 폴더가 있는 볼트로 바꿔 저장합니다.\n"
+            f"  기억된 볼트: {vault}\n"
+            f"  실제 저장할 볼트: {others[0]}",
+            file=sys.stderr,
+        )
+        return others[0]
+
+    if allow_new_folder:
+        print(
+            f"'{folder}' 폴더가 {vault} 에 없습니다. --new-folder 가 있으므로 새로 만듭니다."
+            " (번호는 1부터 시작합니다)",
+            file=sys.stderr,
+        )
+        return vault
+
+    lines = [f"'{folder}' 폴더가 저장하려는 볼트에 없습니다: {vault}"]
+    if others:
+        lines.append("그 폴더가 있는 볼트는 다음과 같습니다. --vault 로 하나를 골라 주세요:")
+        lines += [f"  --vault \"{v}\"" for v in others]
+    else:
+        lines.append("옵시디언에 등록된 어느 볼트에서도 그 폴더를 찾지 못했습니다.")
+        lines.append("  폴더 이름의 철자를 확인하거나, --list-vaults 로 볼트를 확인하세요.")
+    lines.append("정말 새 폴더를 만들려면 --new-folder 를 붙이세요(번호가 1부터 시작합니다).")
+    raise RuntimeError("\n".join(lines))
+
+
 def _truncate_bytes(text: str, limit: int) -> str:
     """UTF-8 기준 limit 바이트를 넘지 않게 자른다(글자 중간에서 끊기지 않게)."""
     encoded = text.encode("utf-8")
@@ -333,6 +405,7 @@ def save_note(
     frontmatter: bool = True,
     extra: dict[str, str] | None = None,
     dry_run: bool = False,
+    allow_new_folder: bool = False,
 ) -> Path:
     """볼트에 노트 하나를 저장하고 저장된 경로를 돌려준다.
 
@@ -341,7 +414,11 @@ def save_note(
     if mode not in ("new", "overwrite", "append"):
         raise ValueError(f"mode 는 new, overwrite, append 중 하나여야 합니다: {mode}")
 
-    vault_path = vault if isinstance(vault, Path) else resolve_vault(vault)
+    vault_path = (
+        vault
+        if isinstance(vault, Path)
+        else resolve_vault_for_folder(vault, folder, allow_new_folder)
+    )
     path = target_path(vault_path, title, folder, filename, date_prefix, auto_number)
 
     body = body.strip()
@@ -410,6 +487,11 @@ def main() -> int:
     parser.add_argument(
         "--list-vaults", action="store_true", help="옵시디언에 등록된 볼트를 찾아서 보여주기"
     )
+    parser.add_argument(
+        "--new-folder",
+        action="store_true",
+        help="--folder 가 볼트에 없어도 새로 만든다(번호가 1부터 시작한다). 기본은 멈춤",
+    )
     parser.add_argument("--no-frontmatter", action="store_true", help="속성(---) 블록 없이 저장")
     parser.add_argument("--dry-run", action="store_true", help="저장하지 않고 결과만 보여주기")
     args = parser.parse_args()
@@ -462,6 +544,7 @@ def main() -> int:
             auto_number=args.auto_number,
             frontmatter=not args.no_frontmatter,
             dry_run=args.dry_run,
+            allow_new_folder=args.new_folder,
         )
     except (RuntimeError, ValueError) as exc:
         print(str(exc), file=sys.stderr)
