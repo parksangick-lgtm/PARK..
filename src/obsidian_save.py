@@ -492,6 +492,13 @@ def main() -> int:
         action="store_true",
         help="--folder 가 볼트에 없어도 새로 만든다(번호가 1부터 시작한다). 기본은 멈춤",
     )
+    parser.add_argument(
+        "--prop",
+        action="append",
+        default=[],
+        metavar="이름=값",
+        help="속성(프로퍼티)을 더 넣는다. 여러 번 쓸 수 있다 (예: --prop \"요약=한 줄\" --prop \"주제=사이트\")",
+    )
     parser.add_argument("--no-frontmatter", action="store_true", help="속성(---) 블록 없이 저장")
     parser.add_argument("--dry-run", action="store_true", help="저장하지 않고 결과만 보여주기")
     args = parser.parse_args()
@@ -530,6 +537,14 @@ def main() -> int:
 
     body = args.file.read_text(encoding="utf-8-sig") if args.file else sys.stdin.read().lstrip("\ufeff")
 
+    extra: dict[str, str] = {}
+    for item in args.prop:
+        key, sep, value = item.partition("=")
+        if not sep or not key.strip():
+            print(f"--prop \uc740 \uc774\ub984=\uac12 \ubaa8\uc591\uc774\uc5b4\uc57c \ud569\ub2c8\ub2e4: {item}", file=sys.stderr)
+            return 1
+        extra[key.strip()] = value.strip()
+
     try:
         path = save_note(
             body=body,
@@ -543,6 +558,7 @@ def main() -> int:
             date_prefix=args.date_prefix,
             auto_number=args.auto_number,
             frontmatter=not args.no_frontmatter,
+            extra=extra or None,
             dry_run=args.dry_run,
             allow_new_folder=args.new_folder,
         )
